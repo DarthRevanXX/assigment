@@ -1,0 +1,62 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - rate-api
+    environment:
+      REDIS_URL: redis://redis:6379/0
+
+      RATE_API_URL: http://rate-api:8080
+      RATE_API_TOKEN: ${RATE_API_TOKEN:-04aa6f42aa03f220c2ae9a276cd68c62}
+
+      RAILS_ENV: development
+      RAILS_LOG_TO_STDOUT: "true"
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    networks:
+      - pricing-network
+    command: >
+      sh -c "
+        rm -f tmp/pids/server.pid &&
+        touch tmp/caching-dev.txt &&
+        ./bin/rails db:prepare &&
+        ./bin/rails server -b 0.0.0.0
+      "
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pricing-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rate-api:
+    image: tripladev/rate-api:latest
+    ports:
+      - "3001:8080"
+    environment:
+      RATE_API_TOKEN: ${RATE_API_TOKEN:-04aa6f42aa03f220c2ae9a276cd68c62}
+    networks:
+      - pricing-network
+
+volumes:
+  redis_data:
+    driver: local
+  bundle_cache:
+    driver: local
+
+networks:
+  pricing-network:
+    driver: bridge

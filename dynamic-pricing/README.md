@@ -84,5 +84,67 @@ docker container exec -it interview-dev ./bin/rails test test/controllers/pricin
 docker container exec -it interview-dev ./bin/rails test test/controllers/pricing_controller_test.rb -n test_should_get_pricing_with_all_parameters
 ```
 
+---
+
+## Solution Implementation
+
+### Quick Start
+
+```bash
+# Using Docker Compose (Recommended)
+docker-compose up --build
+
+# Test the endpoint
+curl 'http://localhost:3000/pricing?period=Summer&hotel=FloatingPointResort&room=SingletonRoom'
+
+# Run tests
+docker-compose run --rm app ./bin/rails test
+```
+
+### Architecture
+
+Redis caching (5-min TTL) with three resilience patterns:
+- **redis-mutex**: Distributed locking (prevents thundering herd)
+- **circuitbox**: Circuit breaker (fails fast when API down)
+- **Rack::Attack**: Rate limiting (100 req/min per IP)
+
+Redis provides shared state across instances, atomic operations, and low latency.
+
+Details in [IMPLEMENTATION.md](IMPLEMENTATION.md).
+
+### Testing
+
+```bash
+# Run all tests
+docker-compose run --rm app ./bin/rails test
+
+# Check cache behavior
+docker-compose exec redis redis-cli
+> KEYS pricing:rate:*
+```
+
+### API Examples
+
+```bash
+# Valid request
+curl 'http://localhost:3000/pricing?period=Summer&hotel=FloatingPointResort&room=SingletonRoom'
+# {"rate":"15000"}
+
+# Invalid parameter
+curl 'http://localhost:3000/pricing?period=InvalidSeason&hotel=FloatingPointResort&room=SingletonRoom'
+# {"error":"Invalid period. Must be one of: Summer, Autumn, Winter, Spring"}
+```
+
+### Configuration
+
+Environment variables:
+
+```bash
+REDIS_URL=redis://localhost:6379/0
+RATE_API_URL=http://rate-api:3001
+RATE_API_TOKEN=your-api-token
+```
+
+---
 
 Good luck, and we look forward to seeing what you build\!

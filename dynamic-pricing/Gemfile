@@ -12,7 +12,19 @@ gem "sqlite3", ">= 1.4"
 gem "puma", ">= 5.0"
 
 # Use Redis adapter to run Action Cable in production
-# gem "redis", ">= 4.0.1"
+gem "redis", "~> 5.0"
+
+# HTTP client for external API calls
+gem "httparty", "~> 0.21"
+
+# Distributed locking with Redis
+gem "redis-mutex", "~> 4.0"
+
+# Circuit breaker pattern implementation
+gem "circuitbox", "~> 2.0"
+
+# Rate limiting middleware for Rack applications
+gem "rack-attack", "~> 6.7"
 
 # Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
 # gem "kredis"
@@ -32,6 +44,9 @@ gem "bootsnap", require: false
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]
+
+  # Mocking and stubbing library for tests
+  gem "mocha", "~> 3.0"
 end
 
 group :development do
