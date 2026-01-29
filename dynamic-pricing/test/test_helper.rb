@@ -6,6 +6,13 @@ require "mocha/minitest"
 # Disable Rack::Attack in tests to prevent rate limiting interference
 Rack::Attack.enabled = false
 
+# Mock RedisMutex globally for tests to avoid Redis dependency
+class RedisMutex
+  def self.with_lock(*args)
+    yield if block_given?
+  end
+end
+
 class ActiveSupport::TestCase
   # Run tests in parallel with specified workers
   parallelize(workers: 1)
